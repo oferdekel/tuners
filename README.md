@@ -1,2 +1,2 @@
 # tuners
-skeleton code for code autotuners
+Skeleton code for code autotuners
