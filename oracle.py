@@ -1,13 +1,13 @@
 #   Project: Tuners
 #   Author: Ofer Dekel
 
-"""Simulates an oracle that takes a list of configuration vectors and measures the speed of each one."""
-
 from hashlib import sha1
 from numpy import array, ndarray
 import random
 
+
 class HashableArray(ndarray):
+    """ Extends numby ndarrays by making them immutable and hashable, so that they can be dictionary keys. """
 
     def __new__(cls, values):
         return array(values).view(cls)
@@ -22,24 +22,23 @@ class HashableArray(ndarray):
         return self.__hash
 
     def __setitem__(self, key, value):
-        raise Exception("hashable arrays are read-only")
+        raise Exception("hashable arrays are read-only")    # make the array immutable
 
 
 class Oracle:
+    """ Simulates an oracle that evaluates sets of configuration vectors. """
 
-    results_cache = {}
+    def __init__(self):
+        self.results_cache = {}
 
-    def __init__(self, dim):
-        """ Creates an oracle of a given dimension. """
-        zero_config = HashableArray([0] * dim)
-        self.query({zero_config})
+    def __str__(self):
+        return '\n'.join(str(config) + '\t' + str(result) for (config, result) in self.results_cache.items())
 
-    def _evaluate(self, configs):
+    def __evaluate(self, configs):
         """ Evaluates a set of configurations.
             Args:
                 configs: a set of tuples
         """
-
         return {config: random.randint(0,100) for config in configs}
 
     def query(self, configs):
@@ -47,15 +46,13 @@ class Oracle:
             Args:
                 configs: a set of tuples
         """
-
-        to_evaluate = set(configs).difference(self.results_cache)
-        results = self._evaluate(to_evaluate)
-        self.results_cache.update(results)
-
-        return {config: self.results_cache[config] for config in configs}
+        configs = {HashableArray(config) for config in configs}
+        new_configs = set(configs).difference(self.results_cache)   # get a (unique) set of configs that aren't in the cache
+        results = self.__evaluate(new_configs)   # evaluate the new configs
+        self.results_cache.update(results)  # cache the new results
+        return {config: self.results_cache[config] for config in configs} # return a dictionary of results, both new and old
 
     def get_best(self, tolerance = 0):
         """Returns a dictionary of the configs with the smallest results observed so far, up to a specified tolerance."""
-
         threshold = min(self.results_cache.values()) + tolerance
         return {config:result for (config, result) in self.results_cache.items() if result <= threshold}
