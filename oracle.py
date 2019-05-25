@@ -3,6 +3,7 @@
 
 from hashlib import sha1
 import numpy as np
+import scipy.special as sp
 
 
 class HashableArray(np.ndarray):
@@ -27,26 +28,24 @@ class HashableArray(np.ndarray):
 class Oracle:
     """ Simulates an oracle that evaluates sets of configuration vectors. """
 
-    NUM_LANDMARKS = 5
-    VARIANCE = 3
+    NUM_LANDMARKS = 100
 
     def __init__(self, dim):
         self.dim = dim
         self.results_cache = {}
-        self.landmarks = np.random.randn(dim, self.NUM_LANDMARKS)
-        self.landmark_variance = np.random.rand(self.NUM_LANDMARKS) * self.VARIANCE
-        self.landmark_values = np.random.randn(self.NUM_LANDMARKS)
-        self.landmark_norms2 = np.linalg.norm(self.landmarks, axis=0) ** 2
+        self.landmarks = np.random.rand(dim, self.NUM_LANDMARKS)
+        self.landmarks /= np.sum(self.landmarks, axis = 0) 
+        self.weights = np.random.rand(self.NUM_LANDMARKS)
+        self.scale = 10 * np.random.randn(self.NUM_LANDMARKS) * np.sqrt(dim)
+        self.shift = 360 * np.random.randn(self.NUM_LANDMARKS) * np.sqrt(dim)
 
     def __str__(self):
         return '\n'.join(str(config) + '\t' + str(result) for (config, result) in self.results_cache.items())
 
     def __result(self, config):
-        dot = config.dot(self.landmarks)
-        norm2 = config.dot(config)
-        dist2 = norm2 + self.landmark_norms2 - 2 * dot
-        gaussian = np.exp(-dist2 / self.landmark_variance)
-        result = gaussian.dot(self.landmark_values) + norm2 / 75;
+        vals = config.dot(self.landmarks)
+        results0 = [np.sin(self.shift[i] + self.scale[i] * vals[i]) for i in range(self.NUM_LANDMARKS)]
+        result = self.weights.dot(results0) # + (1 - self.weights).dot(results1)
         return result
 
     def evaluate(self, configs):
