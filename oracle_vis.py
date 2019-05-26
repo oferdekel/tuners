@@ -4,67 +4,76 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
-from oracle import Oracle
+from multivariate_functions import MultivariateSin
 
 def replace_coord(arr, index, value):
     copy = np.array(arr)
     copy[index] = value
     return copy
 
-def show1d(oracle, config):
+def factor2(num):
+    """ Returns integers (a,b) such that a >= b, a and b are as close as possible, and a * b = num. """
+
+    a = int(np.ceil(np.sqrt(num)))
+    while num % a > 0:
+        a += 1 
+    b = int(num / a)
+    return (a, b)
+
+def show1d(func, origin):
     """ Plots the optimization landscape along a few random directions. """
 
-    GRID_SIZE = 1000
-    NUM_PLOT_ROWS = 3
-    NUM_PLOT_COLS = 4
- 
+    GRID_SIZE = 100
     grid = np.linspace(-1, 1, GRID_SIZE)
-    fig, ax = plt.subplots(NUM_PLOT_ROWS, NUM_PLOT_COLS, sharey=True)
 
-    for i in range(NUM_PLOT_ROWS):
-        for j in  range(NUM_PLOT_COLS):
+    (num_cols, num_rows) = factor2(func.dim)
+    fig, ax = plt.subplots(num_rows, num_cols, sharey=True)
 
-            k = np.random.randint(0, oracle.dim)
+    for k in range(func.dim):
+        points = [replace_coord(origin, k, val) for val in grid]            
+        results = func.evaluate(points)
+        
+        i, j = divmod(k, num_cols)
+        
+        if isinstance(ax[i], np.ndarray):
+            current = ax[i][j]
+        else:
+            current = ax[j]    # if dim is prime, there is only one row of axes
 
-            configs = [replace_coord(config, k, v) for v in grid]            
-            results = oracle.evaluate(configs)
-
-            ax[i][j].plot(grid, results, '-', linewidth=2)
-            ax[i][j].set_xlabel('coord ' + str(k))
+        current.plot(grid, results, '-', linewidth=2)
+        current.set_xlabel('coord ' + str(k))
 
     plt.tight_layout() 
     plt.show()
 
 
-def show2d(oracle, config):
+def show2d(func, origin):
 
-    GRID_SIZE = 100
-    NUM_PLOT_ROWS = 3
-    NUM_PLOT_COLS = 4
-
-    fig = plt.figure()
-    
+    GRID_SIZE = 40
     grid = np.linspace(-1, 1, GRID_SIZE)
     X, Y = np.meshgrid(grid, grid)
 
-    for i in range(1, NUM_PLOT_ROWS * NUM_PLOT_COLS + 1):
-        
-        perm = np.random.permutation(range(oracle.dim))
-        index0 = perm[0]
-        index1 = perm[1]
+    fig = plt.figure()
+    num_plots = func.dim // 2
+    (num_cols, num_rows) = factor2(num_plots)
+    perm = np.random.permutation(range(func.dim))
+
+    for k in range(num_plots):
+        index0 = perm[2 * k]
+        index1 = perm[2 * k + 1]
         
         queries = []
         for x in grid:
             for y in grid:
-                query = np.array(config) 
+                query = np.array(origin) 
                 query[index0] = x
                 query[index1] = y
                 queries.append(query)
 
-        results = np.array(oracle.evaluate(queries))
+        results = np.array(func.evaluate(queries))
         results = results.reshape(GRID_SIZE, GRID_SIZE)
 
-        ax = fig.add_subplot(NUM_PLOT_ROWS, NUM_PLOT_COLS, i, projection='3d')
+        ax = fig.add_subplot(num_rows, num_cols, k+1, projection='3d')
         ax.set_xlabel('coord ' + str(index0))
         ax.set_ylabel('coord ' + str(index1))
 
@@ -74,11 +83,11 @@ def show2d(oracle, config):
     plt.show()
 
 def main():
-    DIM = 10
+    DIM = 25
 
-    O = Oracle(DIM)
-    config = np.zeros(DIM)
-    show2d(O, config)
+    f = MultivariateSin(DIM)
+    origin = np.zeros(DIM)
+    show2d(f, origin)
 
 if __name__ == '__main__':
     main()

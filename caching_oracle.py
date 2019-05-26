@@ -3,8 +3,7 @@
 
 from hashlib import sha1
 import numpy as np
-import scipy.special as sp
-
+from multivariate_functions import MultivariateSin
 
 class HashableArray(np.ndarray):
     """ Extends numby ndarrays by making them immutable and hashable, so that they can be dictionary keys. """
@@ -25,35 +24,15 @@ class HashableArray(np.ndarray):
         raise Exception("hashable arrays are read-only")    # make the array immutable
 
 
-class Oracle:
+class CachingOracle:
     """ Simulates an oracle that evaluates sets of configuration vectors. """
 
-    NUM_LANDMARKS = 100
-
-    def __init__(self, dim):
-        self.dim = dim
+    def __init__(self, function):
+        self.function = function
         self.results_cache = {}
-        self.landmarks = np.random.rand(dim, self.NUM_LANDMARKS)
-        self.landmarks /= np.sum(self.landmarks, axis = 0) 
-        self.weights = np.random.rand(self.NUM_LANDMARKS)
-        self.scale = 10 * np.random.randn(self.NUM_LANDMARKS) * np.sqrt(dim)
-        self.shift = 360 * np.random.randn(self.NUM_LANDMARKS) * np.sqrt(dim)
 
     def __str__(self):
         return '\n'.join(str(config) + '\t' + str(result) for (config, result) in self.results_cache.items())
-
-    def __result(self, config):
-        vals = config.dot(self.landmarks)
-        results0 = [np.sin(self.shift[i] + self.scale[i] * vals[i]) for i in range(self.NUM_LANDMARKS)]
-        result = self.weights.dot(results0) # + (1 - self.weights).dot(results1)
-        return result
-
-    def evaluate(self, configs):
-        """ Evaluates a set of configurations.
-            Args:
-                configs: a set of tuples
-        """
-        return [self.__result(config) for config in configs]
 
     def query(self, configs):
         """ Looks up the results for a list of configs, queries any missing configs.
@@ -62,7 +41,7 @@ class Oracle:
         """
         configs = {HashableArray(config) for config in configs}
         new_configs = list(set(configs).difference(self.results_cache))    # get a (unique) set of configs that aren't in the cache
-        new_results = self.evaluate(new_configs)    # evaluate the new configs
+        new_results = self.function.evaluate(new_configs)    # evaluate the new configs
         self.results_cache.update(zip(new_configs, new_results))    # cache the new results
         return {config: self.results_cache[config] for config in configs}    # return a dictionary of results, both new and old
 
@@ -70,3 +49,12 @@ class Oracle:
         """Returns a dictionary of the configs with the smallest results observed so far, up to a specified tolerance."""
         threshold = min(self.results_cache.values()) + tolerance
         return {config:result for (config, result) in self.results_cache.items() if result <= threshold}
+
+
+def main():
+    f = MultivariateSin(10)
+    o = CachingOracle(f)
+    o.query([np.ones(10), np.zeros(10)])
+
+if __name__ == '__main__':
+    main()
