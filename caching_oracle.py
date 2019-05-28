@@ -50,6 +50,10 @@ class CachingOracle:
         threshold = min(self.results_cache.values()) + tolerance
         return {config:result for (config, result) in self.results_cache.items() if result <= threshold}
 
+    def get_dimension(self):
+        return self.function.dim
+
+
 
 def main():
     f = MultivariateSin(10)
