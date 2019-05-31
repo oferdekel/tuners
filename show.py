@@ -2,6 +2,7 @@
 #   Author: Ofer Dekel
 
 import numpy as np
+import matplotlib.colors as clrs
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from multivariate_functions import MultivariateSin
@@ -20,11 +21,10 @@ def factor2(num):
     b = int(num / a)
     return (a, b)
 
-def show1d(func, origin):
+def show1d(func, origin, grid_size = 100):
     """ Plots the optimization landscape along a few random directions. """
-
-    GRID_SIZE = 100
-    grid = np.linspace(-1, 1, GRID_SIZE)
+    
+    grid = np.linspace(-1, 1, grid_size)
 
     (num_cols, num_rows) = factor2(func.dim)
     fig, ax = plt.subplots(num_rows, num_cols, sharey=True)
@@ -47,16 +47,19 @@ def show1d(func, origin):
     plt.show()
 
 
-def show2d(func, origin):
+def show2d(func, origin, grid_size = 40):
 
-    GRID_SIZE = 40
-    grid = np.linspace(-1, 1, GRID_SIZE)
+    grid = np.linspace(-1, 1, grid_size)
     X, Y = np.meshgrid(grid, grid)
 
     fig = plt.figure()
     num_plots = func.dim // 2
     (num_cols, num_rows) = factor2(num_plots)
     perm = np.random.permutation(range(func.dim))
+
+    all_results = []
+    max_result = 0
+    min_result = 0
 
     for k in range(num_plots):
         index0 = perm[2 * k]
@@ -71,23 +74,36 @@ def show2d(func, origin):
                 queries.append(query)
 
         results = np.array(func.evaluate(queries))
-        results = results.reshape(GRID_SIZE, GRID_SIZE)
+        max_result = max(max(results), max_result)
+        min_result = min(min(results), min_result)
+        results = results.reshape(grid_size, grid_size)
+        all_results.append(results)
 
+    for k in range(num_plots):
+        #clrs.Normalize(vmin = min_result, vmax=max_result)
         ax = fig.add_subplot(num_rows, num_cols, k+1, projection='3d')
+        ax.set_zlim3d(min_result, max_result)
         ax.set_xlabel('coord ' + str(index0))
         ax.set_ylabel('coord ' + str(index1))
-
-        ax.plot_surface(X, Y, results, cmap='hot')
+        ax.plot_surface(X, Y, all_results[k], cmap='hot', vmin=min_result, vmax=max_result)
 
     plt.tight_layout() 
     plt.show()
 
-def main():
-    DIM = 25
 
-    f = MultivariateSin(DIM)
+
+def main():
+    DIM = 100
+    NUM_WAVES = 30
+    AMPLITUDE_SCALE = 0.45
+    FREQUENCY_SCALE = 1
+    ROUND = True
+
+    f = MultivariateSin(DIM, NUM_WAVES, AMPLITUDE_SCALE, FREQUENCY_SCALE, ROUND)
     origin = np.zeros(DIM)
-    show2d(f, origin)
+
+    GRID_SIZE = 100
+    show1d(f, origin, GRID_SIZE)
 
 if __name__ == '__main__':
     main()

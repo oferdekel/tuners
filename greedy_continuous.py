@@ -5,10 +5,11 @@ import numpy as np
 from multivariate_functions import MultivariateSin
 from caching_oracle import CachingOracle
 
-class GreedyBinarySearch():
+class GreedyContinuousSearch():
 
-    def __init__(self, oracle):
+    def __init__(self, oracle, increment = 0.1):
         self.oracle = oracle
+        self.increment = increment
         self.best_config = np.zeros(oracle.get_dimension())
         queries = [self.best_config]
         self.oracle.query(queries)
@@ -19,9 +20,16 @@ class GreedyBinarySearch():
 
         queries = []
         for i in range(self.oracle.get_dimension()):
+
             copy = np.array(self.best_config)
-            copy[i] = 1 - copy[i]
-            queries.append(copy)
+            if copy[i] <= 1 - self.increment:
+                copy[i] += self.increment
+                queries.append(copy)
+
+            copy = np.array(self.best_config)
+            if copy[i] >= -1 + self.increment:
+                copy[i] -= self.increment
+                queries.append(copy)
 
         self.oracle.query(queries)
         config, value = self.oracle.get_best(0).popitem()
@@ -37,16 +45,17 @@ class GreedyBinarySearch():
 
 
 def main():
-    DIM = 10
+    DIM = 100
     NUM_WAVES = 30
     AMPLITUDE_SCALE = 0.45
     FREQUENCY_SCALE = 1
     ROUND = True
-    STEPS = 10
-
+    STEPS = 40
+    INCREMENT = 0.5
+    
     f = MultivariateSin(DIM, NUM_WAVES, AMPLITUDE_SCALE, FREQUENCY_SCALE, ROUND)
     o = CachingOracle(f)
-    s = GreedyBinarySearch(o)
+    s = GreedyContinuousSearch(o, INCREMENT)
     
     for i in range(STEPS):
         print(s.step())
