@@ -37,14 +37,14 @@ class GreedyBinarySearch():
 
 
 def main():
-    DIM = 10
-    NUM_WAVES = 30
-    AMPLITUDE_SCALE = 0.45
+    DIM = 20
+    NUM_WAVES = 7
+    PRE_AMPLITUDE_SCALE = 1
+    POST_AMPLITUDE_SCALE = 0.45
     FREQUENCY_SCALE = 1
-    ROUND = True
     STEPS = 10
 
-    f = MultivariateSin(DIM, NUM_WAVES, AMPLITUDE_SCALE, FREQUENCY_SCALE, ROUND)
+    f = MultivariateSin(DIM, NUM_WAVES, PRE_AMPLITUDE_SCALE, POST_AMPLITUDE_SCALE, FREQUENCY_SCALE)
     o = CachingOracle(f)
     s = GreedyBinarySearch(o)
     

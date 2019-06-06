@@ -93,17 +93,17 @@ def show2d(func, origin, grid_size = 40):
 
 
 def main():
-    DIM = 100
-    NUM_WAVES = 30
-    AMPLITUDE_SCALE = 0.45
+    DIM = 20
+    NUM_WAVES = 7
+    PRE_AMPLITUDE_SCALE = 1
+    POST_AMPLITUDE_SCALE = 0.45
     FREQUENCY_SCALE = 1
-    ROUND = True
 
-    f = MultivariateSin(DIM, NUM_WAVES, AMPLITUDE_SCALE, FREQUENCY_SCALE, ROUND)
+    f = MultivariateSin(DIM, NUM_WAVES, PRE_AMPLITUDE_SCALE, POST_AMPLITUDE_SCALE, FREQUENCY_SCALE)
     origin = np.zeros(DIM)
 
-    GRID_SIZE = 100
-    show1d(f, origin, GRID_SIZE)
+    GRID_SIZE = 50
+    show2d(f, origin, GRID_SIZE)
 
 if __name__ == '__main__':
     main()

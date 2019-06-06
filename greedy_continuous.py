@@ -9,27 +9,26 @@ class GreedyContinuousSearch():
 
     def __init__(self, oracle, increment = 0.1):
         self.oracle = oracle
+        self.dimension = oracle.get_dimension() 
         self.increment = increment
         self.best_config = np.zeros(oracle.get_dimension())
-        queries = [self.best_config]
-        self.oracle.query(queries)
+        self.oracle.query([self.best_config])
         x, self.best_value = self.oracle.get_best(0).popitem()
 
-    def step(self):
+    def step(self, basis = None):
+
+        if basis is None:
+            basis = np.eye(self.dimension)
+
+        basis *= self.increment
+
         previous_best = self.best_value
 
-        queries = []
-        for i in range(self.oracle.get_dimension()):
+        x = np.clip(self.best_config + basis, -1, 1)
+        queries = x.tolist()
 
-            copy = np.array(self.best_config)
-            if copy[i] <= 1 - self.increment:
-                copy[i] += self.increment
-                queries.append(copy)
-
-            copy = np.array(self.best_config)
-            if copy[i] >= -1 + self.increment:
-                copy[i] -= self.increment
-                queries.append(copy)
+        x = np.clip(self.best_config - basis, -1, 1)
+        queries += x.tolist()
 
         self.oracle.query(queries)
         config, value = self.oracle.get_best(0).popitem()
@@ -45,15 +44,15 @@ class GreedyContinuousSearch():
 
 
 def main():
-    DIM = 100
-    NUM_WAVES = 30
-    AMPLITUDE_SCALE = 0.45
+    DIM = 20
+    NUM_WAVES = 7
+    PRE_AMPLITUDE_SCALE = 1
+    POST_AMPLITUDE_SCALE = 0.45
     FREQUENCY_SCALE = 1
-    ROUND = True
-    STEPS = 40
-    INCREMENT = 0.5
-    
-    f = MultivariateSin(DIM, NUM_WAVES, AMPLITUDE_SCALE, FREQUENCY_SCALE, ROUND)
+    STEPS = 10
+    INCREMENT = 0.4
+
+    f = MultivariateSin(DIM, NUM_WAVES, PRE_AMPLITUDE_SCALE, POST_AMPLITUDE_SCALE, FREQUENCY_SCALE)
     o = CachingOracle(f)
     s = GreedyContinuousSearch(o, INCREMENT)
     
