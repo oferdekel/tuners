@@ -43,7 +43,7 @@ class CachingOracle:
         new_configs = list(set(configs).difference(self.results_cache))    # get a (unique) set of configs that aren't in the cache
         new_results = self.function.evaluate(new_configs)    # evaluate the new configs
         self.results_cache.update(zip(new_configs, new_results))    # cache the new results
-        return {config: self.results_cache[config] for config in configs}    # return a dictionary of results, both new and old
+        return [self.results_cache[config] for config in configs]   # return a list of results that matches the order of the queries
 
     def get_best(self, tolerance = 0):
         """Returns a dictionary of the configs with the smallest results observed so far, up to a specified tolerance."""
@@ -52,7 +52,6 @@ class CachingOracle:
 
     def get_dimension(self):
         return self.function.dim
-
 
 
 def main():
