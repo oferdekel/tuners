@@ -47,51 +47,6 @@ def show1d(func, origin, grid_size = 100):
     plt.show()
 
 
-def show2d(func, origin, grid_size = 40):
-
-    grid = np.linspace(-1, 1, grid_size)
-    X, Y = np.meshgrid(grid, grid)
-
-    fig = plt.figure()
-    num_plots = func.dim // 2
-    (num_cols, num_rows) = factor2(num_plots)
-    perm = np.random.permutation(range(func.dim))
-
-    all_results = []
-    max_result = 0
-    min_result = 0
-
-    for k in range(num_plots):
-        index0 = perm[2 * k]
-        index1 = perm[2 * k + 1]
-        
-        queries = []
-        for x in grid:
-            for y in grid:
-                query = np.array(origin) 
-                query[index0] = x
-                query[index1] = y
-                queries.append(query)
-
-        results = np.array(func.evaluate(queries))
-        max_result = max(max(results), max_result)
-        min_result = min(min(results), min_result)
-        results = results.reshape(grid_size, grid_size)
-        all_results.append(results)
-
-    for k in range(num_plots):
-        #clrs.Normalize(vmin = min_result, vmax=max_result)
-        ax = fig.add_subplot(num_rows, num_cols, k+1, projection='3d')
-        ax.set_zlim3d(min_result, max_result)
-        ax.set_xlabel('coord ' + str(index0))
-        ax.set_ylabel('coord ' + str(index1))
-        ax.plot_surface(X, Y, all_results[k], cmap='hot', vmin=min_result, vmax=max_result)
-
-    plt.tight_layout() 
-    plt.show()
-
-
-
 def main():
     DIM = 20
     NUM_WAVES = 7
@@ -103,7 +58,7 @@ def main():
     origin = np.zeros(DIM)
 
     GRID_SIZE = 50
-    show2d(f, origin, GRID_SIZE)
+    show1d(f, origin, GRID_SIZE)
 
 if __name__ == '__main__':
     main()
