@@ -6,20 +6,12 @@ import matplotlib.colors as clrs
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from multivariate_functions import MultivariateSin
+from utils import factor2
 
 def replace_coord(arr, index, value):
     copy = np.array(arr)
     copy[index] = value
     return copy
-
-def factor2(num):
-    """ Returns integers (a,b) such that a >= b, a and b are as close as possible, and a * b = num. """
-
-    a = int(np.ceil(np.sqrt(num)))
-    while num % a > 0:
-        a += 1 
-    b = int(num / a)
-    return (a, b)
 
 def show1d(func, origin, grid_size = 100):
     """ Plots the optimization landscape along a few random directions. """
