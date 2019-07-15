@@ -8,11 +8,18 @@ from random_basis import randomBasis
 
 class GreedyContinuousSearch():
 
-    def __init__(self, oracle):
+    def __init__(self, oracle, initial_point = np.empty(0)):
         self.oracle = oracle
         self.dimension = oracle.get_dimension() 
-        self.best_config = np.zeros(oracle.get_dimension())
-        self.oracle.query([self.best_config])
+        
+        if initial_point.size == 0:
+            self.current_point = np.zeros(self.dimension)
+        else:
+            if len(initial_point) is not self.dimension:
+                raise Exception('initial_point is not the right size')
+            self.current_point = initial_point
+
+        self.oracle.query([self.current_point])
         x, self.best_value = self.oracle.get_best(0).popitem()
 
     def step(self, directions, scale = 1, symmetrize = False):
@@ -25,15 +32,15 @@ class GreedyContinuousSearch():
 
         previous_best_value = self.best_value
 
-        x = np.clip(self.best_config + directions, -1, 1)
+        x = np.clip(self.current_point + directions, -1, 1)
         queries = x.tolist()
 
         self.oracle.query(queries)
-        config, value = self.oracle.get_best(0).popitem()
+        point, value = self.oracle.get_best(0).popitem()
 
         if value < self.best_value:
             self.best_value = value
-            self.best_config = config
+            self.current_point = point
 
         return previous_best_value - self.best_value
 
@@ -74,7 +81,7 @@ def main():
 
     f = MultivariateSin(DIM, NUM_WAVES, PRE_AMPLITUDE_SCALE, POST_AMPLITUDE_SCALE, FREQUENCY_SCALE)
     o = CachingOracle(f)
-    s = GreedyContinuousSearch(o)
+    s = GreedyContinuousSearch(o, np.ones(20))
 
     for i in range(STEPS):
         print(s.step_random(scale = STEP_SCALE))

@@ -8,22 +8,19 @@ from mpl_toolkits import mplot3d
 from multivariate_functions import MultivariateSin
 from utils import factor2
 
-def replace_coord(arr, index, value):
-    copy = np.array(arr)
-    copy[index] = value
-    return copy
-
 def show1d(func, origin, grid_size = 100):
     """ Plots the optimization landscape along a few random directions. """
     
-    grid = np.linspace(-1, 1, grid_size)
+    grid = np.linspace(-1, 1, grid_size).T
 
     (num_cols, num_rows) = factor2(func.dim)
     fig, ax = plt.subplots(num_rows, num_cols, sharey=True)
 
     for k in range(func.dim):
-        points = [replace_coord(origin, k, val) for val in grid]            
-        results = func.evaluate(points)
+        
+        queries = np.tile(origin, (grid_size, 1))
+        queries[:, k] = grid
+        results = func.evaluate(queries)
         
         i, j = divmod(k, num_cols)
         

@@ -24,39 +24,37 @@ class HashableArray(np.ndarray):
         raise Exception("hashable arrays are read-only")    # make the array immutable
 
 
-class CachingOracle:
+class MultivariateFunctionCache:
     """ Simulates an oracle that evaluates sets of configuration vectors. """
 
     def __init__(self, function):
         self.function = function
+        self.dim = function.dim
         self.results_cache = {}
 
     def __str__(self):
         return '\n'.join(str(config) + '\t' + str(result) for (config, result) in self.results_cache.items())
 
-    def query(self, configs):
-        """ Looks up the results for a list of configs, queries any missing configs.
+    def evaluate(self, X):
+        """ Looks up the results for a given X, only queries the underlying function for missing points.
             Args:
-                configs: a set of tuples
+                X: a numpy matrix, where each row is a query
         """
-        configs = {HashableArray(config) for config in configs}
-        new_configs = list(set(configs).difference(self.results_cache))    # get a (unique) set of configs that aren't in the cache
-        new_results = self.function.evaluate(new_configs)    # evaluate the new configs
-        self.results_cache.update(zip(new_configs, new_results))    # cache the new results
-        return [self.results_cache[config] for config in configs]   # return a list of results that matches the order of the queries
+        queries = [HashableArray(x) for x in X]
+        new_queries = set(queries).difference(self.results_cache)    # get a (unique) set of configs that aren't in the cache
+        new_queries_matrix = np.stack(list(new_queries))
+        new_results = self.function.evaluate(new_queries_matrix)    # evaluate the new configs
+        self.results_cache.update(zip(new_queries, new_results))    # cache the new results
+        return np.stack([self.results_cache[x] for x in queries])   # return a matrix of results that matches the order of the queries
 
     def get_best(self, tolerance = 0):
         """Returns a dictionary of the configs with the smallest results observed so far, up to a specified tolerance."""
         threshold = min(self.results_cache.values()) + tolerance
         return {config:result for (config, result) in self.results_cache.items() if result <= threshold}
 
-    def get_dimension(self):
-        return self.function.dim
-
-
 def main():
     f = MultivariateSin(10)
-    o = CachingOracle(f)
+    o = MultivariateFunctionCache(f)
     o.query([np.ones(10), np.zeros(10)])
 
 if __name__ == '__main__':

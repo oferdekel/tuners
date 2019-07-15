@@ -6,7 +6,7 @@ import scipy.special as sp
 
 class MultivariateSin():
 
-    def __init__(self, dim, num_waves = 30, pre_amplitude_scale = 1, post_amplitude_scale = 1, frequency_scale = 1):
+    def __init__(self, dim, num_waves = 30, pre_amplitude_scale = 1, post_amplitude_scale = 1, frequency_scale = 1, round = True):
         self.dim = dim
         self.num_waves = num_waves
         self.pre_amplitude_scale = pre_amplitude_scale
@@ -20,14 +20,22 @@ class MultivariateSin():
         self.frequency = frequency_scale * np.random.randn(num_waves) * np.sqrt(dim)
         self.phase = 36000 * np.random.randn(num_waves) * np.sqrt(dim)
 
-    def evaluate(self, x):
-        if isinstance(x, np.ndarray):
-            dots = x.dot(self.vectors)
-            results = [np.cos(self.phase[i] + self.frequency[i] * dots[i]) * self.pre_amplitude_scale for i in range(self.num_waves)]
+    def evaluate(self, X):
+        dots = X.dot(self.vectors) * self.frequency + self.phase
+        results = np.cos(dots) + self.pre_amplitude_scale
+        
+        if self.round is True:
             results = np.round(results)
 
-            result = self.amplitude.dot(results)
-            return result
+        result = results.dot(self.amplitude)
+        return result
 
-        else:
-            return [self.evaluate(element) for element in x]
+
+class MultivariateLinear():
+
+    def __init__(self, dim):
+        self.w = np.random.randn(dim).T
+        self.dim = dim
+
+    def evaluate(self, X):
+        return X.dot(self.w)
