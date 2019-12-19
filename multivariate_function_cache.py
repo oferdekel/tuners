@@ -40,9 +40,14 @@ class MultivariateFunctionCache:
             Args:
                 X: a numpy matrix, where each row is a query
         """
-        queries = [HashableArray(x) for x in X]
+        
+        if isinstance(X, np.ndarray):
+            queries = [HashableArray(X)]
+        else:
+            queries = [HashableArray(x) for x in X]
+        
         new_queries = set(queries).difference(self.results_cache)    # get a (unique) set of configs that aren't in the cache
-        new_queries_matrix = np.stack(list(new_queries))
+        new_queries_matrix = np.stack(list(new_queries))    # BUG 0- creates tensr fos shape (1,20,20)
         new_results = self.function.evaluate(new_queries_matrix)    # evaluate the new configs
         self.results_cache.update(zip(new_queries, new_results))    # cache the new results
         return np.stack([self.results_cache[x] for x in queries])   # return a matrix of results that matches the order of the queries

@@ -3,7 +3,7 @@
 
 import numpy as np
 
-def randomBasis(dim):
+def randomOrthonormal(dim):
     X = np.random.randn(dim, dim)
     Q, R = np.linalg.qr(X)
     return Q

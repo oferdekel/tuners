@@ -3,24 +3,23 @@
 
 import numpy as np
 from multivariate_functions import MultivariateSin
-from caching_oracle import CachingOracle
-from random_basis import randomBasis
+from multivariate_function_cache import MultivariateFunctionCache
+from random_orthonormal import randomOrthonormal
 
-class GreedyContinuousSearch():
+class GreedyLocalSearch():
 
     def __init__(self, oracle, initial_point = np.empty(0)):
         self.oracle = oracle
-        self.dimension = oracle.get_dimension() 
+        self.dim = oracle.dim
         
         if initial_point.size == 0:
-            self.current_point = np.zeros(self.dimension)
+            self.current_point = np.zeros(self.dim)
         else:
-            if len(initial_point) is not self.dimension:
+            if len(initial_point) is not self.dim:
                 raise Exception('initial_point is not the right size')
             self.current_point = initial_point
 
-        self.oracle.query([self.current_point])
-        x, self.best_value = self.oracle.get_best(0).popitem()
+        self.current_value = self.oracle.evaluate(self.current_point)
 
     def step(self, directions, scale = 1, symmetrize = False):
         """ Takes a step in each of a given set of directions and commits to the step with the greatest improvement. """
@@ -30,39 +29,36 @@ class GreedyContinuousSearch():
 
         directions = directions * scale
 
-        previous_best_value = self.best_value
+        queries = np.clip(self.current_point + directions, -1, 1)
 
-        x = np.clip(self.current_point + directions, -1, 1)
-        queries = x.tolist()
+        results = self.oracle.evaluate(queries)
+        best_index = np.argmin(results)
 
-        self.oracle.query(queries)
-        point, value = self.oracle.get_best(0).popitem()
+        if results[best_index] < self.best_value:
+            self.best_value = results[best_index] 
+            self.current_point = queries[best_index, :]
 
-        if value < self.best_value:
-            self.best_value = value
-            self.current_point = point
-
-        return previous_best_value - self.best_value
+        return value
 
     def step_eye(self, scale = 1):
         """ Takes a step in each of the cannonical directions and commits to the step with the greatest improvement. """
 
-        directions = np.eye(self.dimension)
+        directions = np.eye(self.dim)
         return self.step(directions, scale, symmetrize = True)
 
-    def step_random_orthonormal(self, scale = 1):
+    def step_random_orthonormal(self, scale = 1, basis = np.empty(0)):
         """ Takes a step in each of an orthonormal set of directions and commits to the step with the greatest improvement. """
 
-        directions = randomBasis(self.dimension)
+        directions = randomOrthonormal(self.dim)
         return self.step(directions, scale, symmetrize = True)
 
-    def step_random(self, scale = 1, num_directions = 0):
+    def step_random(self, scale = 1, num_directions = 0, basis = np.empty(0)):
         """ Takes a step in a given number of random directions and commits to the step with the greatest improvement. """
 
         if num_directions == 0:
-            num_directions = self.dimension
+            num_directions = self.dim
 
-        directions = np.random.randn(num_directions, self.dimension)
+        directions = np.random.randn(num_directions, self.dim)
         return self.step(directions, scale, symmetrize = False)
 
     def get_best(self, tolerance=0):
@@ -80,8 +76,8 @@ def main():
     STEP_SCALE = 0.2
 
     f = MultivariateSin(DIM, NUM_WAVES, PRE_AMPLITUDE_SCALE, POST_AMPLITUDE_SCALE, FREQUENCY_SCALE)
-    o = CachingOracle(f)
-    s = GreedyContinuousSearch(o, np.ones(20))
+    o = MultivariateFunctionCache(f)
+    s = GreedyLocalSearch(o)
 
     for i in range(STEPS):
         print(s.step_random(scale = STEP_SCALE))
